@@ -13,8 +13,6 @@ import (
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 )
 
-const PORT int16 = 4321
-
 type RoastName string
 
 type order struct {
@@ -84,14 +82,19 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	fmt.Println("Staring sever in port", PORT)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "4321"
+	}
+
+	fmt.Println("Staring sever in port", port)
 
 	fmt.Println(
 		os.Getenv("SENDGRID_API_KEY"),
 	)
 	http.HandleFunc("/submit", submitOrder)
 
-	err = http.ListenAndServe(fmt.Sprintf(":%d", PORT), nil)
+	err = http.ListenAndServe(fmt.Sprintf(":%v", port), nil)
 	if err != nil {
 		log.Fatal(err)
 	}
