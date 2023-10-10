@@ -72,9 +72,8 @@ func submitOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 
-		fmt.Println(response.StatusCode)
-		fmt.Println(response.Body)
-		fmt.Fprintf(w, "Order created successfully")
+		w.WriteHeader(response.StatusCode)
+		json.NewEncoder(w).Encode(response.Body)
 	}
 
 }
