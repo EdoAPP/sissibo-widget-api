@@ -37,12 +37,12 @@ func submitOrder(w http.ResponseWriter, r *http.Request) {
 
 	m := mail.NewV3Mail()
 
-	from := mail.NewEmail("Eduardo", "edo@shipyardsoftware.org") // Change to your verified sender
+	from := mail.NewEmail("Eduardo", "eduardoapp.97@gmail.com") // Change to your verified sender
 	m.SetFrom(from)
 	m.SetTemplateID("d-a7ce9f0478ab48d3ae6cdfd4a043b3a7")
 
 	tos := []*mail.Email{
-		mail.NewEmail("Eduardo", "eduardoapp.97@gmail.com"),
+		mail.NewEmail("Test name", "edo@shipyardsoftware.org"),
 	}
 
 	p := mail.NewPersonalization()
@@ -62,14 +62,8 @@ func submitOrder(w http.ResponseWriter, r *http.Request) {
 		Disposition: "attachment",
 	})
 
-	// client := sendgrid.NewSendClient(os.Getenv("SENDGRID_API_KEY"))
-	// response, err := client.Send(m)
-
-	request := sendgrid.GetRequest(os.Getenv("SENDGRID_API_KEY"), "/v3/mail/send", "https://api.sendgrid.com")
-	request.Method = "POST"
-	var Body = mail.GetRequestBody(m)
-	request.Body = Body
-	response, err := sendgrid.API(request)
+	client := sendgrid.NewSendClient(os.Getenv("SENDGRID_API_KEY"))
+	response, err := client.Send(m)
 
 	if err != nil {
 		fmt.Println(err)
