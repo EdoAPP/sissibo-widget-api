@@ -27,6 +27,10 @@ func submitOrder(w http.ResponseWriter, r *http.Request) {
 	order := new(order)
 	json.NewDecoder(r.Body).Decode(&order)
 
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
 	if strings.Trim(order.CompanyName, " ") == "" {
 		http.Error(w, "Missing company name", http.StatusBadRequest)
 		return
