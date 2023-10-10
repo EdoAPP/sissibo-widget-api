@@ -74,7 +74,7 @@ func submitOrder(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Println(response.StatusCode)
 		fmt.Println(response.Body)
-		w.Write([]byte(response.Body))
+		fmt.Fprintf(w, "Order created successfully")
 	}
 
 }
@@ -86,14 +86,22 @@ func main() {
 	}
 
 	fmt.Println("Staring sever in port", port)
-
-	fmt.Println(
-		os.Getenv("SENDGRID_API_KEY"),
-	)
-	http.HandleFunc("/submit", submitOrder)
+	http.HandleFunc("/submit", corsHandler(submitOrder))
 
 	err := http.ListenAndServe(fmt.Sprintf(":%v", port), nil)
 	if err != nil {
 		log.Fatal(err)
+	}
+}
+
+func corsHandler(h http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "OPTIONS" {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "POST")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		} else {
+			h.ServeHTTP(w, r)
+		}
 	}
 }
