@@ -38,7 +38,7 @@ func submitOrder(w http.ResponseWriter, r *http.Request) {
 
 	m := mail.NewV3Mail()
 
-	from := mail.NewEmail("Eduardo", "eduardoapp.97@gmail.com") // Change to your verified sender
+	from := mail.NewEmail("Drew Tozer", "drewmorgantozer@gmail.com") // Change to your verified sender
 	m.SetFrom(from)
 	m.SetTemplateID("d-a7ce9f0478ab48d3ae6cdfd4a043b3a7")
 
