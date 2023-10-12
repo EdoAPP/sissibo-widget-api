@@ -43,7 +43,7 @@ func submitOrder(w http.ResponseWriter, r *http.Request) {
 	m.SetTemplateID("d-a7ce9f0478ab48d3ae6cdfd4a043b3a7")
 
 	tos := []*mail.Email{
-		mail.NewEmail("Test name", "edo@shipyardsoftware.org"),
+		mail.NewEmail("Sissiboo Wholesale", "wholesale@sissiboocoffee.com"),
 	}
 
 	p := mail.NewPersonalization()
