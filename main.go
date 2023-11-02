@@ -12,8 +12,6 @@ import (
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 )
 
-type RoastName string
-
 type order struct {
 	CompanyName      string  `json:"companyName"`
 	OrderNotes       string  `json:"orderNotes"`
