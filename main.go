@@ -73,7 +73,6 @@ func submitOrder(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(response.StatusCode)
 		json.NewEncoder(w).Encode(response.Body)
 	}
-
 }
 
 func main() {

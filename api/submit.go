@@ -24,6 +24,10 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	order := new(order)
 	json.NewDecoder(r.Body).Decode(&order)
 
+	if r.Method == http.MethodOptions {
+		return
+	}
+
 	if strings.Trim(order.CompanyName, " ") == "" {
 		http.Error(w, "Missing company name", http.StatusBadRequest)
 		return
