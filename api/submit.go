@@ -74,6 +74,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	m := mail.NewV3Mail()
 
+	fmt.Println("Sending email...", order)
+
 	from := mail.NewEmail("Drew Tozer", "drewmorgantozer@gmail.com") // Change to your verified sender
 	m.SetFrom(from)
 	m.SetTemplateID("d-a9133530e5c54f2aac13f7462adedf07")
