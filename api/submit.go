@@ -6,9 +6,10 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/sendgrid/sendgrid-go"
-	"github.com/sendgrid/sendgrid-go/helpers/mail"
+	sgMail "github.com/sendgrid/sendgrid-go/helpers/mail"
 )
 
 type RoastsQty struct {
@@ -57,6 +58,7 @@ type order struct {
 	DeliveryLocation string    `json:"deliveryLocation,omitempty"`
 	OrderTotal       float64   `json:"orderTotal"`
 	RoastsQty        RoastsQty `json:"roastsQty"`
+	EmailAddress     string    `json:"emailAddress"`
 }
 
 func Handler(w http.ResponseWriter, r *http.Request) {
@@ -72,90 +74,106 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := mail.NewV3Mail()
+	_, err := sgMail.ParseEmail(order.EmailAddress)
 
-	fmt.Println("Sending email...", order)
+	if strings.Trim(order.EmailAddress, " ") == "" || err != nil {
+		http.Error(w, "Missing or invalid email address", http.StatusBadRequest)
+		return
+	}
 
-	from := mail.NewEmail("Drew Tozer", "drewmorgantozer@gmail.com") // Change to your verified sender
+	// sissiboo email
+	m := sgMail.NewV3Mail()
+	from := sgMail.NewEmail("Drew Tozer", "drewmorgantozer@gmail.com") // Change to your verified sender
 	m.SetFrom(from)
 	m.SetTemplateID("d-a9133530e5c54f2aac13f7462adedf07")
 
-	tos := []*mail.Email{
-		mail.NewEmail("Sissiboo Wholesale", "edo@shipyardsoftware.org"),
-	}
+	p := buildPersonalizedEmail(*order)
+	cp := buildPersonalizedEmail(*order)
 
-	p := mail.NewPersonalization()
-	p.AddTos(tos...)
+	p.SetDynamicTemplateData("Subject", fmt.Sprintf("New order from %s", order.CompanyName))
+	p.AddTos(
+		sgMail.NewEmail("Eduardo Pacheco", "edo@shipyardsoftware.org"),
+	)
 
-	p.SetDynamicTemplateData("Company_Name", order.CompanyName)
-	p.SetDynamicTemplateData("Delivery_Location", order.DeliveryLocation)
-	p.SetDynamicTemplateData("Purchase_Order", order.OrderNumber)
-	p.SetDynamicTemplateData("Order_Notes", order.OrderNotes)
-	p.SetDynamicTemplateData("Order_Total", order.OrderTotal)
+	cp.SetDynamicTemplateData("Subject", "Sissiboo Coffee has received your wholesale order!")
+	cp.AddTos(sgMail.NewEmail(order.CompanyName, order.EmailAddress))
 
-	p.SetDynamicTemplateData("ge_1lb_gr", order.RoastsQty.Ge1LbGr)
-	p.SetDynamicTemplateData("ge_1lb_wb", order.RoastsQty.Ge1LbWb)
-	p.SetDynamicTemplateData("ge_2lb_gr", order.RoastsQty.Ge2lbGr)
-	p.SetDynamicTemplateData("ge_2lb_wb", order.RoastsQty.Ge2lbWb)
-	p.SetDynamicTemplateData("ge_5lb_gr", order.RoastsQty.Ge5LbGr)
-	p.SetDynamicTemplateData("ge_5lb_wb", order.RoastsQty.Ge5LbWb)
-
-	p.SetDynamicTemplateData("tw_1lb_gr", order.RoastsQty.Tw1LbGr)
-	p.SetDynamicTemplateData("tw_1lb_wb", order.RoastsQty.Tw1LbWb)
-	p.SetDynamicTemplateData("tw_2lb_gr", order.RoastsQty.Tw2lbGr)
-	p.SetDynamicTemplateData("tw_2lb_wb", order.RoastsQty.Tw2lbWb)
-	p.SetDynamicTemplateData("tw_5lb_gr", order.RoastsQty.Tw5LbGr)
-	p.SetDynamicTemplateData("tw_5lb_wb", order.RoastsQty.Tw5LbWb)
-
-	p.SetDynamicTemplateData("no_1lb_gr", order.RoastsQty.No1LbGr)
-	p.SetDynamicTemplateData("no_1lb_wb", order.RoastsQty.No1LbWb)
-	p.SetDynamicTemplateData("no_2lb_gr", order.RoastsQty.No2lbGr)
-	p.SetDynamicTemplateData("no_2lb_wb", order.RoastsQty.No2lbWb)
-	p.SetDynamicTemplateData("no_5lb_gr", order.RoastsQty.No5LbGr)
-	p.SetDynamicTemplateData("no_5lb_wb", order.RoastsQty.No5LbWb)
-
-	p.SetDynamicTemplateData("fs_1lb_gr", order.RoastsQty.Fs1LbGr)
-	p.SetDynamicTemplateData("fs_1lb_wb", order.RoastsQty.Fs1LbWb)
-	p.SetDynamicTemplateData("fs_2lb_gr", order.RoastsQty.Fs2lbGr)
-	p.SetDynamicTemplateData("fs_2lb_wb", order.RoastsQty.Fs2lbWb)
-	p.SetDynamicTemplateData("fs_5lb_gr", order.RoastsQty.Fs5LbGr)
-	p.SetDynamicTemplateData("fs_5lb_wb", order.RoastsQty.Fs5LbWb)
-
-	p.SetDynamicTemplateData("fb_1lb_gr", order.RoastsQty.Fb1LbGr)
-	p.SetDynamicTemplateData("fb_1lb_wb", order.RoastsQty.Fb1LbWb)
-	p.SetDynamicTemplateData("fb_2lb_gr", order.RoastsQty.Fb2lbGr)
-	p.SetDynamicTemplateData("fb_2lb_wb", order.RoastsQty.Fb2lbWb)
-	p.SetDynamicTemplateData("fb_5lb_gr", order.RoastsQty.Fb5LbGr)
-	p.SetDynamicTemplateData("fb_5lb_wb", order.RoastsQty.Fb5LbWb)
-
-	p.SetDynamicTemplateData("fbnd_1lb_gr", order.RoastsQty.Fbnd1LbGr)
-	p.SetDynamicTemplateData("fbnd_1lb_wb", order.RoastsQty.Fbnd1LbWb)
-	p.SetDynamicTemplateData("fbnd_2lb_gr", order.RoastsQty.Fbnd2lbGr)
-	p.SetDynamicTemplateData("fbnd_2lb_wb", order.RoastsQty.Fbnd2lbWb)
-	p.SetDynamicTemplateData("fbnd_5lb_gr", order.RoastsQty.Fbnd5LbGr)
-	p.SetDynamicTemplateData("fbnd_5lb_wb", order.RoastsQty.Fbnd5LbWb)
-
-	total1lb := order.RoastsQty.Ge1LbGr + order.RoastsQty.Ge1LbWb + order.RoastsQty.Tw1LbGr + order.RoastsQty.Tw1LbWb + order.RoastsQty.No1LbGr + order.RoastsQty.No1LbWb + order.RoastsQty.Fs1LbGr + order.RoastsQty.Fs1LbWb + order.RoastsQty.Fb1LbGr + order.RoastsQty.Fb1LbWb + order.RoastsQty.Fbnd1LbGr + order.RoastsQty.Fbnd1LbWb
-	total2lb := order.RoastsQty.Ge2lbGr + order.RoastsQty.Ge2lbWb + order.RoastsQty.Tw2lbGr + order.RoastsQty.Tw2lbWb + order.RoastsQty.No2lbGr + order.RoastsQty.No2lbWb + order.RoastsQty.Fs2lbGr + order.RoastsQty.Fs2lbWb + order.RoastsQty.Fb2lbGr + order.RoastsQty.Fb2lbWb + order.RoastsQty.Fbnd2lbGr + order.RoastsQty.Fbnd2lbWb
-	total5lb := order.RoastsQty.Ge5LbGr + order.RoastsQty.Ge5LbWb + order.RoastsQty.Tw5LbGr + order.RoastsQty.Tw5LbWb + order.RoastsQty.No5LbGr + order.RoastsQty.No5LbWb + order.RoastsQty.Fs5LbGr + order.RoastsQty.Fs5LbWb + order.RoastsQty.Fb5LbGr + order.RoastsQty.Fb5LbWb + order.RoastsQty.Fbnd5LbGr + order.RoastsQty.Fbnd5LbWb
-
-	p.SetDynamicTemplateData("1lb_total", total1lb)
-	p.SetDynamicTemplateData("2lb_total", total2lb)
-	p.SetDynamicTemplateData("5lb_total", total5lb)
-
-	m.AddPersonalizations(p)
+	m.AddPersonalizations(p, cp)
 
 	client := sendgrid.NewSendClient(os.Getenv("SENDGRID_API_KEY"))
 	response, err := client.Send(m)
-
 	if err != nil {
 		fmt.Println(err)
 		http.Error(w, "Error while sending email", http.StatusInternalServerError)
 		return
 	} else {
-
 		w.WriteHeader(response.StatusCode)
 		json.NewEncoder(w).Encode(response.Body)
+
 	}
+
+}
+
+func buildPersonalizedEmail(o order) *sgMail.Personalization {
+	p := sgMail.NewPersonalization()
+
+	p.SetDynamicTemplateData("Company_Name", o.CompanyName)
+	p.SetDynamicTemplateData("Delivery_Location", o.DeliveryLocation)
+	p.SetDynamicTemplateData("Purchase_Order", o.OrderNumber)
+	p.SetDynamicTemplateData("Order_Notes", o.OrderNotes)
+	p.SetDynamicTemplateData("Order_Total", o.OrderTotal)
+	p.SetDynamicTemplateData("Invoice_Date", time.Now().Format("2006-01-02"))
+
+	p.SetDynamicTemplateData("ge_1lb_gr", o.RoastsQty.Ge1LbGr)
+	p.SetDynamicTemplateData("ge_1lb_wb", o.RoastsQty.Ge1LbWb)
+	p.SetDynamicTemplateData("ge_2lb_gr", o.RoastsQty.Ge2lbGr)
+	p.SetDynamicTemplateData("ge_2lb_wb", o.RoastsQty.Ge2lbWb)
+	p.SetDynamicTemplateData("ge_5lb_gr", o.RoastsQty.Ge5LbGr)
+	p.SetDynamicTemplateData("ge_5lb_wb", o.RoastsQty.Ge5LbWb)
+
+	p.SetDynamicTemplateData("tw_1lb_gr", o.RoastsQty.Tw1LbGr)
+	p.SetDynamicTemplateData("tw_1lb_wb", o.RoastsQty.Tw1LbWb)
+	p.SetDynamicTemplateData("tw_2lb_gr", o.RoastsQty.Tw2lbGr)
+	p.SetDynamicTemplateData("tw_2lb_wb", o.RoastsQty.Tw2lbWb)
+	p.SetDynamicTemplateData("tw_5lb_gr", o.RoastsQty.Tw5LbGr)
+	p.SetDynamicTemplateData("tw_5lb_wb", o.RoastsQty.Tw5LbWb)
+
+	p.SetDynamicTemplateData("no_1lb_gr", o.RoastsQty.No1LbGr)
+	p.SetDynamicTemplateData("no_1lb_wb", o.RoastsQty.No1LbWb)
+	p.SetDynamicTemplateData("no_2lb_gr", o.RoastsQty.No2lbGr)
+	p.SetDynamicTemplateData("no_2lb_wb", o.RoastsQty.No2lbWb)
+	p.SetDynamicTemplateData("no_5lb_gr", o.RoastsQty.No5LbGr)
+	p.SetDynamicTemplateData("no_5lb_wb", o.RoastsQty.No5LbWb)
+
+	p.SetDynamicTemplateData("fs_1lb_gr", o.RoastsQty.Fs1LbGr)
+	p.SetDynamicTemplateData("fs_1lb_wb", o.RoastsQty.Fs1LbWb)
+	p.SetDynamicTemplateData("fs_2lb_gr", o.RoastsQty.Fs2lbGr)
+	p.SetDynamicTemplateData("fs_2lb_wb", o.RoastsQty.Fs2lbWb)
+	p.SetDynamicTemplateData("fs_5lb_gr", o.RoastsQty.Fs5LbGr)
+	p.SetDynamicTemplateData("fs_5lb_wb", o.RoastsQty.Fs5LbWb)
+
+	p.SetDynamicTemplateData("fb_1lb_gr", o.RoastsQty.Fb1LbGr)
+	p.SetDynamicTemplateData("fb_1lb_wb", o.RoastsQty.Fb1LbWb)
+	p.SetDynamicTemplateData("fb_2lb_gr", o.RoastsQty.Fb2lbGr)
+	p.SetDynamicTemplateData("fb_2lb_wb", o.RoastsQty.Fb2lbWb)
+	p.SetDynamicTemplateData("fb_5lb_gr", o.RoastsQty.Fb5LbGr)
+	p.SetDynamicTemplateData("fb_5lb_wb", o.RoastsQty.Fb5LbWb)
+
+	p.SetDynamicTemplateData("fbnd_1lb_gr", o.RoastsQty.Fbnd1LbGr)
+	p.SetDynamicTemplateData("fbnd_1lb_wb", o.RoastsQty.Fbnd1LbWb)
+	p.SetDynamicTemplateData("fbnd_2lb_gr", o.RoastsQty.Fbnd2lbGr)
+	p.SetDynamicTemplateData("fbnd_2lb_wb", o.RoastsQty.Fbnd2lbWb)
+	p.SetDynamicTemplateData("fbnd_5lb_gr", o.RoastsQty.Fbnd5LbGr)
+	p.SetDynamicTemplateData("fbnd_5lb_wb", o.RoastsQty.Fbnd5LbWb)
+
+	total1lb := o.RoastsQty.Ge1LbGr + o.RoastsQty.Ge1LbWb + o.RoastsQty.Tw1LbGr + o.RoastsQty.Tw1LbWb + o.RoastsQty.No1LbGr + o.RoastsQty.No1LbWb + o.RoastsQty.Fs1LbGr + o.RoastsQty.Fs1LbWb + o.RoastsQty.Fb1LbGr + o.RoastsQty.Fb1LbWb + o.RoastsQty.Fbnd1LbGr + o.RoastsQty.Fbnd1LbWb
+	total2lb := o.RoastsQty.Ge2lbGr + o.RoastsQty.Ge2lbWb + o.RoastsQty.Tw2lbGr + o.RoastsQty.Tw2lbWb + o.RoastsQty.No2lbGr + o.RoastsQty.No2lbWb + o.RoastsQty.Fs2lbGr + o.RoastsQty.Fs2lbWb + o.RoastsQty.Fb2lbGr + o.RoastsQty.Fb2lbWb + o.RoastsQty.Fbnd2lbGr + o.RoastsQty.Fbnd2lbWb
+	total5lb := o.RoastsQty.Ge5LbGr + o.RoastsQty.Ge5LbWb + o.RoastsQty.Tw5LbGr + o.RoastsQty.Tw5LbWb + o.RoastsQty.No5LbGr + o.RoastsQty.No5LbWb + o.RoastsQty.Fs5LbGr + o.RoastsQty.Fs5LbWb + o.RoastsQty.Fb5LbGr + o.RoastsQty.Fb5LbWb + o.RoastsQty.Fbnd5LbGr + o.RoastsQty.Fbnd5LbWb
+
+	p.SetDynamicTemplateData("total_1lb", total1lb)
+	p.SetDynamicTemplateData("total_2lb", total2lb)
+	p.SetDynamicTemplateData("total_5lb", total5lb)
+
+	return p
 
 }
