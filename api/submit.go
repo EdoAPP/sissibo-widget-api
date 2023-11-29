@@ -119,7 +119,7 @@ func buildPersonalizedEmail(o order) *sgMail.Personalization {
 
 	p.SetDynamicTemplateData("Company_Name", o.CompanyName)
 	p.SetDynamicTemplateData("Delivery_Location", o.DeliveryLocation)
-	p.SetDynamicTemplateData("Purchase_Order", o.OrderNumber)
+	p.SetDynamicTemplateData("Order_Number", o.OrderNumber)
 	p.SetDynamicTemplateData("Order_Notes", o.OrderNotes)
 	p.SetDynamicTemplateData("Order_Total", o.OrderTotal)
 	p.SetDynamicTemplateData("Invoice_Date", time.Now().Format("2006-01-02"))
