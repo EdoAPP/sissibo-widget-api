@@ -92,7 +92,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	p.SetDynamicTemplateData("Subject", fmt.Sprintf("New order from %s", order.CompanyName))
 	p.AddTos(
-		sgMail.NewEmail("Eduardo Pacheco", "edo@shipyardsoftware.org"),
+		sgMail.NewEmail("Sissiboo Wholesale", "wholesale@sissiboocoffee.com"),
 	)
 
 	cp.SetDynamicTemplateData("Subject", "Sissiboo Coffee has received your wholesale order!")
