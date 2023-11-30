@@ -1,6 +1,6 @@
 module github.com/edoapp/sissibo-widget-api
 
-go 1.21
+go 1.18
 
 require github.com/sendgrid/sendgrid-go v3.13.0+incompatible
 
